@@ -1,47 +1,39 @@
-require('dotenv').config();
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 const app = express();
-
-// Configuración Básica
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json()); // Para analizar cuerpos JSON
-
-// Almacenamiento en memoria para las URL
-const urlDatabase = {};
-let shortUrlCounter = 1;
-
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/public', express.static(`${process.cwd()}/public`));
+
+// Almacenar las URL en memoria
+const urlDatabase = {};
 
 app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// Tu primer punto final de la API
 app.get('/api/hello', function(req, res) {
-  res.json({ greeting: '¡Hola desde la API!' });
+  res.json({ greeting: 'hello API' });
 });
 
-// Punto final para acortar URL
 app.post('/api/shorturl', function(req, res) {
-  const originalUrl = req.body.original_url;
+  const originalUrl = req.body.url;
+  const randomNumber = Math.floor(Math.random() * (10000 - 1 + 1)) + 1;
 
-  // Verifica si la URL es válida
-  const urlRegex = new RegExp('^(http|https)://[^ "]+$');
-  if (!urlRegex.test(originalUrl)) {
-    return res.json({ error: 'URL inválida' });
+  // Validar la URL
+  const urlChecker = /^(ftp|http|https):\/\/[^ "]+$/;
+  if (!originalUrl.match(urlChecker)) {
+    res.json({ error: 'invalid url' });
   }
 
-  // Acorta la URL
-  const shortUrl = shortUrlCounter++;
-  urlDatabase[shortUrl] = originalUrl;
-
-  res.json({ original_url: originalUrl, short_url: shortUrl });
+  // Almacenar la URL corta en la base de datos
+  urlDatabase[randomNumber] = originalUrl;
+  res.json({ original_url: originalUrl, short_url: randomNumber });
 });
 
-// Punto final para redirigir las URL cortas a las originales
 app.get('/api/shorturl/:shortUrl', function(req, res) {
   const shortUrl = req.params.shortUrl;
   const originalUrl = urlDatabase[shortUrl];
@@ -49,7 +41,7 @@ app.get('/api/shorturl/:shortUrl', function(req, res) {
   if (originalUrl) {
     res.redirect(originalUrl);
   } else {
-    res.json({ error: 'URL corta no encontrada' });
+    res.status(404).json({ error: 'URL corta no encontrada' });
   }
 });
 
