@@ -26,12 +26,12 @@ app.post('/api/shorturl', function(req, res) {
   // Validar la URL
   const urlChecker = /^(ftp|http|https):\/\/[^ "]+$/;
   if (!originalUrl.match(urlChecker)) {
-    res.json({ error: 'invalid url' });
+    return res.json({ error: 'invalid url' });
   }
 
   // Almacenar la URL corta en la base de datos
   urlDatabase[randomNumber] = originalUrl;
-  res.json({ original_url: originalUrl, short_url: randomNumber });
+  return res.json({ original_url: originalUrl, short_url: randomNumber });
 });
 
 app.get('/api/shorturl/:shortUrl', function(req, res) {
